@@ -1,4 +1,5 @@
 #include<stdio.h>
+#include<ctype.h>
 #include<string.h>
 #include<pthread.h>
 #include<stdlib.h>
@@ -7,99 +8,66 @@
 #include<sys/types.h>
 #include<sys/wait.h>
 #include<dirent.h>
-#define MAX 256
+#define MAX 1000
 
-pthread_t tid[MAX];
 char cwd[MAX];
 
+int isFileExist(char *path) //jika 0 bukan file
+{
+    struct stat path_stat;
+    stat(path, &path_stat);
+    return S_ISREG(path_stat.st_mode);
+}
+
+char *get_filename_ext(char *filename) {
+    char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return "";
+    return dot + 1;
+}
+
 void* playandcount(void *arg){ //ini dah hampir bisa harusnya tp knp mkdirnya+file yg dipindah ga sesuai argumen yg kita pingin
-    FILE *fp1, *fp2;
-   // printf("cur directory : %s\n", cwd); 
-    char* ext;
-    char* fullname = arg;
-    //printf("testing %s\n", fullname);
-    ext = strchr(fullname,'.') + 1;
-//line 23 salah penempatan jadinya kayak fungsi \*
-    mkdir(ext, 0777);
-    mkdir("Unknown", 0777);
-    struct dirent *de;
-    DIR *dr = opendir(cwd);
-    char source[MAX], dest[MAX];
-    while ((de = readdir(dr))){
-        if(!(strcmp(de->d_name, ".")) || !(strcmp(de->d_name, "..")))
-            continue;
-        char* fullname = de->d_name;
-        char* ext;
-        ext = strchr(fullname, '.'); 
-        if(ext != NULL){
-            printf("\ninilho yg dimaksud : %s\n", ext);
-            strcpy(source, cwd);
-            strcat(source, "/");
-            strcpy(dest, source);
-            strcat(dest, (ext+1));
+
+    char *fullname = (void *) arg;
+    //cek exist ga
+    int file_exist = isFileExist(fullname);
+    char source[MAX], dest[MAX],path[MAX];
+    if(file_exist){
+        //cari extension
+        char* ext = get_filename_ext(fullname);
+        //jadi huruf kecil
+        char *abspath = (void *) arg;
+        if(strcmp(ext,"")!= 0){
+            strcpy(source,abspath);
+            strcpy(dest, cwd);
             strcat(dest, "/");
-            strcat(dest, fullname);
-            printf("Dest : %s\n", dest);
-            strcat(source,fullname);
-            printf("Source :  %s\n", source);
-            fp1 = fopen(source, "r");
-            fp2 = fopen(dest, "w");
-              if (!fp1) {
-                printf("Unable to open source file to read!!\n");
-                fclose(fp2);
-                return 0;
-        }
-            if (!fp2) {
-                printf("Unable to open target file to write\n");
-                return 0;
-        }
-            int ch;
-            while ((ch = fgetc(fp1)) != EOF) {
-                        fputc(ch, fp2);
-                }
-                /* closing the opened files */
-                fclose(fp1);
-                fclose(fp2);
-                /* removing the source file */
-                remove(source);
+            char* file_path= strrchr(fullname, '/');
+            strcpy(path,file_path);
+            for(int i = 0; ext[i];i++){
+                ext[i]= tolower(ext[i]);
             }
-            /*else{ niatnya masu masukin file yg gapunya ekstensi
-                strcpy(source, cwd);
-            strcat(source, "/");
-            strcpy(dest, source);
-            strcat(dest, (ext+1));
+            mkdir(ext, 0777);
+            strcat(dest, (ext));
+            strcat(dest,path);
+            rename(source,dest);
+        }
+        else{ 
+            printf("2");
+            mkdir("Unknown",0777);
+            strcpy(dest, cwd);
             strcat(dest, "/");
-            strcat(dest, fullname);
-            printf("Dest  else: %s\n", dest);
-            strcat(source,fullname);
-            printf("Source else:  %s\n", source);
-            fp1 = fopen(source, "r");
-            fp2 = fopen(dest, "w");
-              if (!fp1) {
-                printf("Unable to open source file to read!!\n");
-                fclose(fp2);
-                return 0;
+            strcat(dest,"Unknown"); 
+            char* file_path= strrchr(fullname, '/');
+            strcat(dest,file_path);
+            rename(abspath,dest);
         }
-            if (!fp2) {
-                printf("Unable to open target file to write\n");
-                return 0;
-        }
-            int ch;
-            while ((ch = fgetc(fp1)) != EOF) {
-                        fputc(ch, fp2);
-                }
-                //closing the opened files 
-                fclose(fp1);
-                fclose(fp2);
-                //removing the source file 
-                remove(source);
-            }*/
-        }
-    return NULL;
     }
+    else printf("There's no file like that\n"); 
+    pthread_exit(0);
+}
 
 int main(int argc, char** argv) {
     getcwd(cwd,sizeof(cwd));
+    pthread_t tid[MAX];
     int i = 0; 
     int test;   
     if(strcmp(argv[1], "-f") == 0){
@@ -108,5 +76,45 @@ int main(int argc, char** argv) {
             pthread_join(tid[i],NULL);
             i++;
         }
+    }
+    else if(strcmp(argv[1],"*") == 0){
+        DIR *d;
+        struct dirent *dir;
+        d = opendir(".");
+        if (d) {
+            while ((dir = readdir(d)) != NULL) {
+                char filePath[1000];
+                if(isFileExist(dir->d_name)){
+                    strcpy(filePath, cwd);
+                    strcat(filePath, "/");
+                    strcat(filePath, dir->d_name);
+                    printf("%s\n",filePath);
+                    pthread_create(&(tid[i]),NULL,playandcount,filePath); 
+                    pthread_join(tid[i],NULL);
+                    i++;
+                }
+            }
+            closedir(d);
+        }
+    }
+    else if(strcmp(argv[1],"-d") == 0){
+        DIR *d;
+        struct dirent *dir;
+        d = opendir(argv[2]);
+        if (d) {
+            while ((dir = readdir(d)) != NULL) {
+                char filePath[1000];
+                strcpy(filePath,argv[2]);
+                strcat(filePath, "/");
+                strcat(filePath,dir->d_name);
+                if(isFileExist(filePath)){
+                    pthread_create(&(tid[i]),NULL,playandcount,filePath); 
+                    pthread_join(tid[i],NULL);
+                    i++;
+                }
+            }
+            closedir(d);
+        }
+        else printf("No Dir\n");
     }
 }
