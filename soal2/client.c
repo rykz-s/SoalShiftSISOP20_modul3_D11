@@ -83,15 +83,6 @@ void *recv_msg_handler(void *arg) {
         }
         printf("%s\n",receiveMessage);
         memset(receiveMessage,'\0',sizeof(receiveMessage));
-        //if (strcmp(receiveMessage,"minus")==0)
-        //{
-        //    if (data->health>0)
-        //    {
-        //        data->health-=10;
-        //        printf("Health : %d\n",data->health);
-        //    }
-        //    memset(receiveMessage,'\0',sizeof(receiveMessage));
-        //}
     }
     catch_ctrl_c_and_exit(2);
     pthread_exit(NULL);
