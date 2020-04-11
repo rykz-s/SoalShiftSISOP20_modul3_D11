@@ -383,7 +383,46 @@ int main(int argc, char** argv) {
 ``` 
 Cek apakah argumen yang diberikan adalah -f jika true maka lanjut dimana user bisa menambahkan argumen file yang ingin dikategorikan.
 ```
-
+void* playandcount(void *arg){
+    char *fullname = (void *) arg;
+    //cek exist ga
+    int file_exist = isFileExist(fullname);
+    char source[MAX], dest[MAX],path[MAX];
+    if(file_exist){
+        //cari extension
+        char* ext = get_filename_ext(fullname);
+        //jadi huruf kecil
+        char *abspath = (void *) arg;
+        if(strcmp(ext,"")!= 0){
+            strcpy(source,abspath);
+            strcpy(dest, cwd);
+            strcat(dest, "/");
+            char* file_path= strrchr(fullname, '/');
+            strcpy(path,file_path);
+            for(int i = 0; ext[i];i++){
+                ext[i]= tolower(ext[i]);
+            }
+            mkdir(ext, 0777);
+            strcat(dest, (ext));
+            strcat(dest,path);
+            rename(source,dest);
+        }
+        else{ 
+            printf("2");
+            mkdir("Unknown",0777);
+            strcpy(dest, cwd);
+            strcat(dest, "/");
+            strcat(dest,"Unknown"); 
+            char* file_path= strrchr(fullname, '/');
+            strcat(dest,file_path);
+            rename(abspath,dest);
+        }
+    }
+    else printf("There's no file like that\n"); 
+    pthread_exit(0);
+}
+```
+Pada fungsi playandcount terdapat cara untuk membuat folder sesuai ekstensi file yang ada dan juga folder unknown untuk file tanpa ekstensi. 
 
 **Soal 4:**
 ---
