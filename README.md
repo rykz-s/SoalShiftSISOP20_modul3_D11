@@ -357,6 +357,33 @@ int main(int argc, char** argv) {
 ```
 **Penjelasan**
 ---
+```
+int main(int argc, char** argv) {
+    getcwd(cwd,sizeof(cwd));
+    pthread_t tid[MAX];
+    int i = 0; 
+    int test;   
+    if(strcmp(argv[1], "-f") == 0){
+        for(test = 2; test < argc; test++){
+            pthread_create(&(tid[i]),NULL,playandcount,argv[test]);
+            pthread_join(tid[i],NULL);
+            i++;
+        }
+    }
+```
+```getcwd(cwd,sizeof(cwd));``` digunakan untuk mendapatkan current working directory
+```pthread_t tid[MAX];``` inisialisasi awal thread
+```if(strcmp(argv[1], "-f") == 0){
+        for(test = 2; test < argc; test++){
+            pthread_create(&(tid[i]),NULL,playandcount,argv[test]);
+            pthread_join(tid[i],NULL);
+            i++;
+        }
+    }
+``` 
+Cek apakah argumen yang diberikan adalah -f jika true maka lanjut dimana user bisa menambahkan argumen file yang ingin dikategorikan.
+```
+
 
 **Soal 4:**
 ---
@@ -601,3 +628,83 @@ int main(){
  ```
  **Penjelasan**
  ---
+Pada 4a
+```
+int main(){
+    for (int i = 0; i < LENGTH; i++) { 
+        for (int j = 0; j < WIDTH; j++) { 
+           if(j==1) matrixA[i][j]=1;
+           else if(i==0) matrixA[i][j]=1;
+           else matrixA[i][j]=matrixA[i-1][j]+5;
+        } 
+    } 
+```
+Potongan kode tersebut digunakan untuk membuat matriks A
+```
+for (int i = 0; i < WIDTH; i++) { 
+        for (int j = 0; j < WIDTH_B; j++) { 
+           if(i==0) matrixB[i][j]=1;
+           else matrixB[i][j]=j;
+        } 
+    } 
+```
+Potongan kode tersebut digunakan untuk membuat matriks B
+```
+for (int i = 0; i < MAX_THREAD; i++){
+        int *p;
+        pthread_create(&threads[i],NULL, multiplicationMatrix, (void*)(p));
+    }
+    
+    for (int i = 0; i < MAX_THREAD; i++)  
+        pthread_join(threads[i], NULL);
+```
+Potongan kode ini digunakan untuk membuat thread dan juga untuk menjoinkan setiap threadnya
+```
+void* multiplicationMatrix(void* arg){
+    int core = step_i++;
+    for (int i = core; i < core+1; i++)
+    {
+        for (int j = 0; j < WIDTH_B; j++)  
+            for (int k = 0; k < WIDTH; k++)  
+                matrixC[i][j] += matrixA[i][k] * matrixB[k][j]; 
+    }
+    
+}
+```
+Merupakan fungsi untuk perkalian matriks A dan matriks B kemudian valuenya akan disimpan kedalam matriks C
+```
+ key_t key = 8799;
+    int (*count)[10];
+    int shmid = shmget (key, sizeof *count * 20, 
+        IPC_CREAT | 0666);
+    if (shmid < 1)
+    {
+        perror("exit");
+        exit(0);
+```
+Membuat shared memory
+```
+for (int i = 0; i < LENGTH; i++) { 
+        for (int j = 0; j < WIDTH_B; j++) {
+            count[i][j]=matrixC[i][j];
+            printf("%d ",count[i][j]);
+        }
+        printf("\n");
+    }
+```  
+Potongan kode tersebut untuk mencetak hasil dari matriks yang sudah dikalikan.
+
+Pada 4b
+```
+int main(){
+  key_t key = 8799;
+  int(*count)[10];
+  int shmid = shmget(key, sizeof *count * 20, IPC_CREAT | 0666);
+  if (shmid < 1)
+  {
+    perror("failed");
+    exit(0);
+  }
+```
+Membuat shared memory
+```
